@@ -1,0 +1,40 @@
+{
+  "trees": {
+    "ALDER":        { "common_name": "Alder",          "season": "Jan–Apr",  "peak_months": [2, 3] },
+    "ASH":          { "common_name": "Ash",             "season": "Mar–May",  "peak_months": [3, 4] },
+    "BIRCH":        { "common_name": "Birch",           "season": "Mar–May",  "peak_months": [4] },
+    "CEDAR":        { "common_name": "Cedar",           "season": "Dec–Mar",  "peak_months": [1, 2] },
+    "COTTONWOOD":   { "common_name": "Cottonwood",      "season": "Mar–May",  "peak_months": [4] },
+    "CYPRESS_PINE": { "common_name": "Cypress / Pine",  "season": "Feb–Apr",  "peak_months": [3] },
+    "ELM":          { "common_name": "Elm",             "season": "Feb–Apr",  "peak_months": [3] },
+    "GRAMINALES":   { "common_name": "Graminales",      "season": "May–Sep",  "peak_months": [5, 6] },
+    "HAZEL":        { "common_name": "Hazel",           "season": "Jan–Apr",  "peak_months": [2, 3] },
+    "JUNIPER":      { "common_name": "Juniper / Cedar", "season": "Dec–Mar",  "peak_months": [1, 2] },
+    "MAPLE":        { "common_name": "Maple",           "season": "Mar–May",  "peak_months": [3, 4] },
+    "MULBERRY":     { "common_name": "Mulberry",        "season": "Mar–May",  "peak_months": [4] },
+    "OAK":          { "common_name": "Oak",             "season": "Mar–Jun",  "peak_months": [4, 5] },
+    "OLIVE":        { "common_name": "Olive",           "season": "Apr–Jun",  "peak_months": [5] },
+    "PINE":         { "common_name": "Pine",            "season": "Apr–Jun",  "peak_months": [4, 5] },
+    "PLANE":        { "common_name": "London Plane",    "season": "Apr–May",  "peak_months": [4] },
+    "POPLAR":       { "common_name": "Poplar",          "season": "Mar–Apr",  "peak_months": [3] },
+    "SYCAMORE":     { "common_name": "Sycamore",        "season": "Mar–May",  "peak_months": [4] },
+    "WILLOW":       { "common_name": "Willow",          "season": "Mar–May",  "peak_months": [3] }
+  },
+  "grasses": {
+    "GRASS":         { "common_name": "Grass (mixed)",   "season": "May–Sep",  "peak_months": [5, 6, 7] },
+    "BERMUDA_GRASS": { "common_name": "Bermuda Grass",   "season": "May–Sep",  "peak_months": [6, 7, 8] }
+  },
+  "weeds": {
+    "DANDELION":      { "common_name": "Dandelion",       "season": "Mar–Oct",  "peak_months": [4, 5] },
+    "DOCK":           { "common_name": "Dock / Sorrel",   "season": "May–Sep",  "peak_months": [6, 7] },
+    "LAMB_QUARTERS":  { "common_name": "Lamb's Quarters", "season": "Jun–Oct",  "peak_months": [7, 8] },
+    "MUGWORT":        { "common_name": "Mugwort",         "season": "Jul–Oct",  "peak_months": [8, 9] },
+    "NETTLE":         { "common_name": "Stinging Nettle", "season": "Jun–Sep",  "peak_months": [7] },
+    "PLANTAIN":       { "common_name": "Plantain",        "season": "May–Sep",  "peak_months": [5, 6] },
+    "RAGWEED":        { "common_name": "Ragweed",         "season": "Aug–Nov",  "peak_months": [9] },
+    "RUSSIAN_THISTLE":{ "common_name": "Russian Thistle / Tumbleweed", "season": "Jul–Oct", "peak_months": [8, 9] }
+  },
+  "mold": {
+    "MOLD_SPORES": { "common_name": "Mold Spores", "season": "Jul–Oct", "peak_months": [8, 9] }
+  }
+}

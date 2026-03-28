@@ -1,0 +1,49 @@
+{
+  "profile_name": "David",
+  "location": {
+    "zip": "28079",
+    "city": "Indian Trail, NC",
+    "lat": 35.0763,
+    "lon": -80.6506,
+    "timezone": "America/New_York"
+  },
+  "sensitivities": {
+    "trees": {
+      "JUNIPER":    4,
+      "OAK":        4,
+      "BIRCH":      4,
+      "ALDER":      4,
+      "MAPLE":      3,
+      "SYCAMORE":   3,
+      "ASH":        4,
+      "ELM":        3,
+      "CEDAR":      4,
+      "PINE":       3,
+      "COTTONWOOD": 3,
+      "POPLAR":     3,
+      "WILLOW":     2
+    },
+    "grasses": {
+      "GRASS":         3,
+      "BERMUDA_GRASS": 3
+    },
+    "weeds": {
+      "RAGWEED":         4,
+      "RUSSIAN_THISTLE": 4,
+      "DOCK":            3,
+      "NETTLE":          3,
+      "MUGWORT":         3,
+      "LAMB_QUARTERS":   3,
+      "PLANTAIN":        4,
+      "DANDELION":       3
+    },
+    "mold": {
+      "MOLD_SPORES": 3
+    }
+  },
+  "thresholds": {
+    "notify_above_score": 30,
+    "critical_score": 70
+  },
+  "outputs": ["telegram", "console"]
+}

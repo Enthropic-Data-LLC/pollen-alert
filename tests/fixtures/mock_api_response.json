@@ -1,0 +1,57 @@
+{
+  "regionCode": "US",
+  "dailyInfo": [
+    {
+      "date": {"year": 2026, "month": 4, "day": 1},
+      "plantInfo": [
+        {
+          "code": "OAK",
+          "displayName": "Oak",
+          "inSeason": true,
+          "indexInfo": {"code": "UPI", "value": 4, "category": "Very High"}
+        },
+        {
+          "code": "JUNIPER",
+          "displayName": "Juniper",
+          "inSeason": true,
+          "indexInfo": {"code": "UPI", "value": 3, "category": "High"}
+        },
+        {
+          "code": "BIRCH",
+          "displayName": "Birch",
+          "inSeason": true,
+          "indexInfo": {"code": "UPI", "value": 2, "category": "Moderate"}
+        },
+        {
+          "code": "GRASS",
+          "displayName": "Grass",
+          "inSeason": false,
+          "indexInfo": {"code": "UPI", "value": 1, "category": "Low"}
+        },
+        {
+          "code": "RAGWEED",
+          "displayName": "Ragweed",
+          "inSeason": false,
+          "indexInfo": {"code": "UPI", "value": 0, "category": "None"}
+        }
+      ]
+    },
+    {
+      "date": {"year": 2026, "month": 4, "day": 2},
+      "plantInfo": [
+        {
+          "code": "OAK",
+          "displayName": "Oak",
+          "inSeason": true,
+          "indexInfo": {"code": "UPI", "value": 2, "category": "Moderate"}
+        },
+        {
+          "code": "JUNIPER",
+          "displayName": "Juniper",
+          "inSeason": true,
+          "indexInfo": {"code": "UPI", "value": 1, "category": "Low"}
+        }
+      ]
+    }
+  ]
+}
