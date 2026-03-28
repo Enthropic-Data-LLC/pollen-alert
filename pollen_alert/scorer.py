@@ -93,9 +93,12 @@ def score_day(plants: dict, sensitivities: dict) -> DayScore:
         ))
         raw_total += contribution
 
-    # Normalize: max possible raw score = 5 (max UPI) × 4 (max sensitivity) × 1.0 (weight) × N plants
-    # We normalize against a reference ceiling of 60 (roughly 3 high-sensitivity plants at max)
-    CEILING = 60.0
+    # Normalize against a calibrated ceiling of 100.
+    # Derived from Charlotte, NC peak April scenario: Oak UPI 5 + Birch 4 + Maple 4 + Pine 4
+    # + Ash 3 + Cottonwood 3 + Alder 2 + Juniper 2 + Elm 2 + Sycamore 3 = raw 112.
+    # At CEILING=100, today (late March, raw ~60) → score 60 (High), peak April → Extreme (capped).
+    # Calibrated 2026-03-28 against live Google Pollen API data for Indian Trail, NC.
+    CEILING = 100.0
     normalized = min(raw_total / CEILING * 100, 100)
     score = round(normalized)
 

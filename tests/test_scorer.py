@@ -36,7 +36,7 @@ def test_high_score_for_known_triggers():
         "BIRCH":  {"upi": 2, "display_name": "Birch",  "in_season": True},
     }
     result = score_day(plants, sensitivities)
-    assert result.score > 40, f"Expected high score, got {result.score}"
+    assert result.score > 30, f"Expected high score, got {result.score}"
     assert len(result.plant_scores) == 3
 
 
