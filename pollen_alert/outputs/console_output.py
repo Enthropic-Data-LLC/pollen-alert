@@ -26,8 +26,11 @@ def format_message(
     profile: dict,
     today: DayScore,
     today_date: date,
-    tomorrow: DayScore | None = None,
+    forecast: list | None = None,
 ) -> str:
+    """
+    forecast: list of (DayScore, date) tuples for days after today (up to 4 or 6 days).
+    """
     name = profile.get("profile_name", "You")
     location = profile.get("location", {})
     zip_code = location.get("zip", "")
@@ -57,13 +60,18 @@ def format_message(
         lines.append("")
         lines.append("No significant active threats for your profile today.")
 
-    if tomorrow is not None:
-        t_emoji = RISK_EMOJI.get(tomorrow.color, "⚪")
-        direction = _trend(today.score, tomorrow.score)
+    if forecast:
         lines.append("")
-        lines.append(
-            f"Tomorrow: {t_emoji} {tomorrow.risk_label} (score: {tomorrow.score}) — {direction}"
-        )
+        lines.append("Forecast:")
+        prev_score = today.score
+        for i, (day_score, day_date) in enumerate(forecast):
+            f_emoji = RISK_EMOJI.get(day_score.color, "⚪")
+            label = "Tomorrow" if i == 0 else day_date.strftime("%A")
+            direction = _trend(prev_score, day_score.score)
+            lines.append(
+                f"  {label}: {f_emoji} {day_score.risk_label} ({day_score.score}) — {direction}"
+            )
+            prev_score = day_score.score
 
     lines += [
         "",
@@ -93,6 +101,6 @@ def _trend(today_score: int, tomorrow_score: int) -> str:
 
 
 class ConsoleOutput(BaseOutput):
-    def send(self, today: DayScore, today_date: date, tomorrow: DayScore | None = None) -> None:
-        msg = format_message(self.profile, today, today_date, tomorrow)
+    def send(self, today: DayScore, today_date: date, forecast: list | None = None) -> None:
+        msg = format_message(self.profile, today, today_date, forecast)
         print(msg)

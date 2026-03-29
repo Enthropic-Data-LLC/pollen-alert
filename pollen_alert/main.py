@@ -74,7 +74,7 @@ def run(profile_path: str | None = None, dry_run: bool = False, force: bool = Fa
     api_key = config.get("google_pollen_api_key")
     if api_key:
         try:
-            raw = fetcher.fetch(lat, lon, days=2, api_key=api_key)
+            raw = fetcher.fetch(lat, lon, days=5, api_key=api_key)
             days_data = fetcher.parse(raw)
             source = "Google Pollen API"
         except RuntimeError as e:
@@ -83,7 +83,7 @@ def run(profile_path: str | None = None, dry_run: bool = False, force: bool = Fa
     if not days_data:
         try:
             print("INFO: Falling back to Open-Meteo Pollen API", file=sys.stderr)
-            raw = fetcher_openmeteo.fetch(lat, lon, days=2)
+            raw = fetcher_openmeteo.fetch(lat, lon, days=7)
             days_data = fetcher_openmeteo.parse(raw)
             source = "Open-Meteo"
         except RuntimeError as e:
@@ -95,10 +95,13 @@ def run(profile_path: str | None = None, dry_run: bool = False, force: bool = Fa
         return 1
 
     today_data = days_data[0]
-    tomorrow_data = days_data[1] if len(days_data) > 1 else None
-
     today_score = score_day(today_data["plants"], sensitivities)
-    tomorrow_score = score_day(tomorrow_data["plants"], sensitivities) if tomorrow_data else None
+
+    # Build forecast list: (DayScore, date) for each day after today
+    forecast = [
+        (score_day(d["plants"], sensitivities), d["date"])
+        for d in days_data[1:]
+    ]
 
     notify_threshold = profile.get("thresholds", {}).get("notify_above_score", 30)
     should_notify = force or today_score.score >= notify_threshold
@@ -109,12 +112,12 @@ def run(profile_path: str | None = None, dry_run: bool = False, force: bool = Fa
             file=sys.stderr,
         )
         # Still print to console for logging purposes
-        ConsoleOutput(profile, config).send(today_score, today_data["date"], tomorrow_score)
+        ConsoleOutput(profile, config).send(today_score, today_data["date"], forecast or None)
         return 0
 
     if dry_run:
         print("DRY RUN — would send to:", profile.get("outputs"))
-        ConsoleOutput(profile, config).send(today_score, today_data["date"], tomorrow_score)
+        ConsoleOutput(profile, config).send(today_score, today_data["date"], forecast or None)
         print(f"\nSource: {source}")
         return 0
 
@@ -122,7 +125,7 @@ def run(profile_path: str | None = None, dry_run: bool = False, force: bool = Fa
     errors = []
     for output in outputs:
         try:
-            output.send(today_score, today_data["date"], tomorrow_score)
+            output.send(today_score, today_data["date"], forecast or None)
         except Exception as e:
             errors.append(f"{type(output).__name__}: {e}")
             print(f"ERROR in {type(output).__name__}: {e}", file=sys.stderr)

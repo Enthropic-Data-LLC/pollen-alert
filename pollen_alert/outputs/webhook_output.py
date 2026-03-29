@@ -10,12 +10,12 @@ from pollen_alert.scorer import DayScore, PLANT_CATEGORY
 
 
 class WebhookOutput(BaseOutput):
-    def send(self, today: DayScore, today_date: date, tomorrow: DayScore | None = None) -> None:
+    def send(self, today: DayScore, today_date: date, forecast: list | None = None) -> None:
         url = self.config.get("webhook_url", "")
         if not url:
             raise RuntimeError("WEBHOOK_URL not set")
 
-        payload = _build_payload(self.profile, today, today_date, tomorrow)
+        payload = _build_payload(self.profile, today, today_date, forecast)
         _post(url, payload)
 
 
@@ -23,7 +23,7 @@ def _build_payload(
     profile: dict,
     today: DayScore,
     today_date: date,
-    tomorrow: DayScore | None,
+    forecast: list | None,
 ) -> dict:
     location = profile.get("location", {})
     threats = [
@@ -54,11 +54,11 @@ def _build_payload(
         "top_threats": threats,
     }
 
-    if tomorrow is not None:
-        payload["forecast_tomorrow"] = {
-            "score": tomorrow.score,
-            "risk_label": tomorrow.risk_label,
-        }
+    if forecast:
+        payload["forecast"] = [
+            {"date": d.isoformat(), "score": s.score, "risk_label": s.risk_label}
+            for s, d in forecast
+        ]
 
     return payload
 

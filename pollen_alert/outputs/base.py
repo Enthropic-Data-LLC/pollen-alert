@@ -16,8 +16,8 @@ class BaseOutput(ABC):
         self.config = config
 
     @abstractmethod
-    def send(self, today: DayScore, today_date: date, tomorrow: DayScore | None = None) -> None:
-        """Deliver the alert. Raise on failure."""
+    def send(self, today: DayScore, today_date: date, forecast: list | None = None) -> None:
+        """Deliver the alert. forecast is a list of (DayScore, date) tuples for days after today. Raise on failure."""
         ...
 
     def should_notify(self, score: int) -> bool:

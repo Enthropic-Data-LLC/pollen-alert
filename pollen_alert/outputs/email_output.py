@@ -28,7 +28,7 @@ _CATEGORY_ICONS = {
 
 
 class EmailOutput(BaseOutput):
-    def send(self, today: DayScore, today_date: date, tomorrow: DayScore | None = None) -> None:
+    def send(self, today: DayScore, today_date: date, forecast: list | None = None) -> None:
         cfg = self.config
         required = ("smtp_host", "smtp_user", "smtp_password", "smtp_from", "smtp_to")
         missing = [k for k in required if not cfg.get(k)]
@@ -44,8 +44,8 @@ class EmailOutput(BaseOutput):
             f"🌿 PollenAlert — {date_str} — {today.risk_label} ({today.score}/100)"
         )
 
-        plain = format_message(self.profile, today, today_date, tomorrow)
-        html = _render_html(self.profile, today, today_date, tomorrow)
+        plain = format_message(self.profile, today, today_date, forecast)
+        html = _render_html(self.profile, today, today_date, forecast)
 
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
@@ -63,7 +63,7 @@ class EmailOutput(BaseOutput):
             server.sendmail(cfg["smtp_from"], cfg["smtp_to"], msg.as_string())
 
 
-def _render_html(profile: dict, today: DayScore, today_date: date, tomorrow: DayScore | None) -> str:
+def _render_html(profile: dict, today: DayScore, today_date: date, forecast: list | None) -> str:
     name = profile.get("profile_name", "You")
     location = profile.get("location", {})
     city = location.get("city", location.get("zip", ""))
@@ -87,17 +87,21 @@ def _render_html(profile: dict, today: DayScore, today_date: date, tomorrow: Day
           </td>
         </tr>"""
 
-    tomorrow_section = ""
-    if tomorrow is not None:
-        t_color = _BAND_COLORS.get(tomorrow.color, "#444")
-        t_emoji = RISK_EMOJI.get(tomorrow.color, "⚪")
-        direction = _trend(today.score, tomorrow.score)
-        tomorrow_section = f"""
-        <p style="margin-top:16px; padding:12px; background:#f6f8fa; border-radius:6px;">
-          <strong>Tomorrow:</strong> {t_emoji}
-          <span style="color:{t_color}; font-weight:bold;">{tomorrow.risk_label}</span>
-          (score: {tomorrow.score}) — {direction}
-        </p>"""
+    forecast_section = ""
+    if forecast:
+        rows = ""
+        prev_score = today.score
+        for i, (day_score, day_date) in enumerate(forecast):
+            t_color = _BAND_COLORS.get(day_score.color, "#444")
+            t_emoji = RISK_EMOJI.get(day_score.color, "⚪")
+            direction = _trend(prev_score, day_score.score)
+            label = "Tomorrow" if i == 0 else day_date.strftime("%A")
+            rows += f"<p style='margin:4px 0;'><strong>{label}:</strong> {t_emoji} <span style='color:{t_color};font-weight:bold;'>{day_score.risk_label}</span> (score: {day_score.score}) — {direction}</p>"
+            prev_score = day_score.score
+        forecast_section = f"""
+        <div style="margin-top:16px; padding:12px; background:#f6f8fa; border-radius:6px;">
+          {rows}
+        </div>"""
 
     return f"""<!DOCTYPE html>
 <html>
@@ -115,7 +119,7 @@ def _render_html(profile: dict, today: DayScore, today_date: date, tomorrow: Day
 
     {"<table style='width:100%;border-collapse:collapse;'><thead><tr style='background:#f6f8fa;'><th style='padding:8px 12px;text-align:left;'>Plant</th><th style='padding:8px 12px;'>UPI</th><th style='padding:8px 12px;'>Sensitivity</th><th style='padding:8px 12px;'>Impact</th></tr></thead><tbody>" + threat_rows + "</tbody></table>" if threats else "<p style='color:#57606a;'>No significant active threats for your profile today.</p>"}
 
-    {tomorrow_section}
+    {forecast_section}
 
     <hr style="border:none;border-top:1px solid #d0d7de;margin:20px 0;">
     <p style="font-size:12px; color:#57606a; margin:0;">
