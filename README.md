@@ -132,3 +132,11 @@ config/
 ├── profile.example.json   # Example sensitivity profile
 └── settings.example.env   # Example environment variables
 ```
+
+---
+
+## About
+
+Built and maintained by **[Enthropic Data](https://enthropicdata.com)** — an AI product studio based in Weddington, NC.
+
+Follow our work at [enthropicdata.com](https://enthropicdata.com) or explore our other open source projects at [github.com/Enthropic-Data-LLC](https://github.com/Enthropic-Data-LLC).
