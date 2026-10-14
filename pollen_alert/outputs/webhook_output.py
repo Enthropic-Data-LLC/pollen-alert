@@ -10,12 +10,16 @@ from pollen_alert.scorer import DayScore, PLANT_CATEGORY
 
 
 class WebhookOutput(BaseOutput):
-    def send(self, today: DayScore, today_date: date, forecast: list | None = None) -> None:
+    def send(self, today: DayScore, today_date: date, forecast: list | None = None,
+             source: str = "Google Pollen API", warning: str | None = None,
+             notice: str | None = None) -> None:
         url = self.config.get("webhook_url", "")
         if not url:
             raise RuntimeError("WEBHOOK_URL not set")
 
         payload = _build_payload(self.profile, today, today_date, forecast)
+        if notice:
+            payload["notice"] = notice
         _post(url, payload)
 
 

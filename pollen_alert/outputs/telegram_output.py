@@ -13,7 +13,9 @@ TELEGRAM_API = "https://api.telegram.org/bot{token}/sendMessage"
 
 
 class TelegramOutput(BaseOutput):
-    def send(self, today: DayScore, today_date: date, forecast: list | None = None) -> None:
+    def send(self, today: DayScore, today_date: date, forecast: list | None = None,
+             source: str = "Google Pollen API", warning: str | None = None,
+             notice: str | None = None) -> None:
         token = self.config.get("telegram_bot_token", "")
         chat_id = self.config.get("telegram_chat_id", "")
         if not token:
@@ -21,7 +23,8 @@ class TelegramOutput(BaseOutput):
         if not chat_id:
             raise RuntimeError("TELEGRAM_CHAT_ID not set")
 
-        text = format_message(self.profile, today, today_date, forecast)
+        text = format_message(self.profile, today, today_date, forecast, source=source,
+                              warning=warning, notice=notice)
         _send(token, chat_id, text)
 
 

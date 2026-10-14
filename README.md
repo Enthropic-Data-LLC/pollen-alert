@@ -39,6 +39,7 @@ Key fields in `profile.json`:
 | `location.city` | Display name for alerts |
 | `sensitivities` | Per-plant sensitivity 0–4 (0 = not sensitive, 4 = highly allergic) |
 | `thresholds.notify_above_score` | Minimum personal score to trigger an alert (0–100) |
+| `thresholds.notify_plant_contribution` | Alert when any single plant's UPI × sensitivity × weight reaches this, today or in the forecast (default 8 — e.g. UPI 2 on a sensitivity-4 plant). Gives an early heads-up when one allergen is rising on its own |
 | `thresholds.critical_score` | Score treated as critical severity |
 | `outputs` | List of `"telegram"`, `"email"`, `"webhook"`, `"console"` |
 
@@ -132,6 +133,10 @@ config/
 ├── profile.example.json   # Example sensitivity profile
 └── settings.example.env   # Example environment variables
 ```
+
+## Mold
+
+Neither pollen source measures mold in the US, so `mold_estimate.py` derives an approximate `MOLD_SPORES` UPI from Open-Meteo weather (rain over the past 3 days, humidity, temperature, fall leaf-litter season; frost suppresses). It is shown as **Mold (est.)**. If the weather fetch fails, the report says mold is not monitored that day.
 
 ---
 

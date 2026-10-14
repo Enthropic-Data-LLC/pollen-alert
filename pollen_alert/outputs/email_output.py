@@ -28,7 +28,9 @@ _CATEGORY_ICONS = {
 
 
 class EmailOutput(BaseOutput):
-    def send(self, today: DayScore, today_date: date, forecast: list | None = None) -> None:
+    def send(self, today: DayScore, today_date: date, forecast: list | None = None,
+             source: str = "Google Pollen API", warning: str | None = None,
+             notice: str | None = None) -> None:
         cfg = self.config
         required = ("smtp_host", "smtp_user", "smtp_password", "smtp_from", "smtp_to")
         missing = [k for k in required if not cfg.get(k)]
@@ -44,8 +46,10 @@ class EmailOutput(BaseOutput):
             f"🌿 PollenAlert — {date_str} — {today.risk_label} ({today.score}/100)"
         )
 
-        plain = format_message(self.profile, today, today_date, forecast)
-        html = _render_html(self.profile, today, today_date, forecast)
+        plain = format_message(self.profile, today, today_date, forecast, source=source,
+                               warning=warning, notice=notice)
+        html = _render_html(self.profile, today, today_date, forecast, source=source,
+                            warning=warning, notice=notice)
 
         msg = MIMEMultipart("alternative")
         msg["Subject"] = subject
@@ -63,7 +67,9 @@ class EmailOutput(BaseOutput):
             server.sendmail(cfg["smtp_from"], cfg["smtp_to"], msg.as_string())
 
 
-def _render_html(profile: dict, today: DayScore, today_date: date, forecast: list | None) -> str:
+def _render_html(profile: dict, today: DayScore, today_date: date, forecast: list | None,
+                 source: str = "Google Pollen API", warning: str | None = None,
+                 notice: str | None = None) -> str:
     name = profile.get("profile_name", "You")
     location = profile.get("location", {})
     city = location.get("city", location.get("zip", ""))
@@ -116,6 +122,7 @@ def _render_html(profile: dict, today: DayScore, today_date: date, forecast: lis
       {emoji} {today.score}/100 &mdash; {today.risk_label}
     </p>
     <p style="color:#57606a; margin:0 0 20px;">Personal risk score for {name}</p>
+    {f'<p style="padding:10px 12px; background:#fff8c5; border-radius:6px;">🔔 {notice}</p>' if notice else ""}
 
     {"<table style='width:100%;border-collapse:collapse;'><thead><tr style='background:#f6f8fa;'><th style='padding:8px 12px;text-align:left;'>Plant</th><th style='padding:8px 12px;'>UPI</th><th style='padding:8px 12px;'>Sensitivity</th><th style='padding:8px 12px;'>Impact</th></tr></thead><tbody>" + threat_rows + "</tbody></table>" if threats else "<p style='color:#57606a;'>No significant active threats for your profile today.</p>"}
 
@@ -123,7 +130,7 @@ def _render_html(profile: dict, today: DayScore, today_date: date, forecast: lis
 
     <hr style="border:none;border-top:1px solid #d0d7de;margin:20px 0;">
     <p style="font-size:12px; color:#57606a; margin:0;">
-      Source: Google Pollen API &mdash;
+      Source: {source} &mdash;
       <a href="https://github.com/sohocs509/pollen-alert" style="color:#0969da;">pollen-alert v1.0</a>
     </p>
   </div>

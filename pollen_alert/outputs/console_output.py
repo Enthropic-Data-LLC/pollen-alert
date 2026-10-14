@@ -27,6 +27,9 @@ def format_message(
     today: DayScore,
     today_date: date,
     forecast: list | None = None,
+    source: str = "Google Pollen API",
+    warning: str | None = None,
+    notice: str | None = None,
 ) -> str:
     """
     forecast: list of (DayScore, date) tuples for days after today (up to 4 or 6 days).
@@ -43,6 +46,8 @@ def format_message(
         "",
         f"{emoji} Personal Risk Score: {today.score}/100 — {today.risk_label.upper()}",
     ]
+    if notice:
+        lines[3:3] = [f"🔔 {notice}", ""]
 
     threats = [p for p in today.top_threats if p.contribution > 0]
     if threats:
@@ -73,10 +78,13 @@ def format_message(
             )
             prev_score = day_score.score
 
+    if warning:
+        lines += ["", f"⚠️ {warning}"]
+
     lines += [
         "",
         "---",
-        "Source: Google Pollen API | pollen-alert v1.0",
+        f"Source: {source} | pollen-alert v1.0",
     ]
     return "\n".join(lines)
 
@@ -101,6 +109,9 @@ def _trend(today_score: int, tomorrow_score: int) -> str:
 
 
 class ConsoleOutput(BaseOutput):
-    def send(self, today: DayScore, today_date: date, forecast: list | None = None) -> None:
-        msg = format_message(self.profile, today, today_date, forecast)
+    def send(self, today: DayScore, today_date: date, forecast: list | None = None,
+             source: str = "Google Pollen API", warning: str | None = None,
+             notice: str | None = None) -> None:
+        msg = format_message(self.profile, today, today_date, forecast, source=source,
+                             warning=warning, notice=notice)
         print(msg)

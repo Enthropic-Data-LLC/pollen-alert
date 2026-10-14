@@ -16,7 +16,9 @@ class BaseOutput(ABC):
         self.config = config
 
     @abstractmethod
-    def send(self, today: DayScore, today_date: date, forecast: list | None = None) -> None:
+    def send(self, today: DayScore, today_date: date, forecast: list | None = None,
+             source: str = "Google Pollen API", warning: str | None = None,
+             notice: str | None = None) -> None:
         """Deliver the alert. forecast is a list of (DayScore, date) tuples for days after today. Raise on failure."""
         ...
 

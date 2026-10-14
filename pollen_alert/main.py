@@ -7,7 +7,7 @@ from datetime import date
 from pathlib import Path
 
 from pollen_alert import profile as profile_mod
-from pollen_alert import fetcher, fetcher_openmeteo
+from pollen_alert import fetcher, fetcher_openmeteo, mold_estimate, state as state_mod
 from pollen_alert.scorer import score_day, flatten_sensitivities
 from pollen_alert.outputs.console_output import ConsoleOutput
 
@@ -94,6 +94,14 @@ def run(profile_path: str | None = None, dry_run: bool = False, force: bool = Fa
         print("ERROR: No forecast data returned", file=sys.stderr)
         return 1
 
+    # Mold isn't measured by either pollen source — add a weather-based estimate
+    mold_note = None
+    try:
+        mold_estimate.merge_into(days_data, mold_estimate.estimate(mold_estimate.fetch(lat, lon)))
+    except RuntimeError as e:
+        print(f"WARNING: mold estimate unavailable: {e}", file=sys.stderr)
+        mold_note = "Mold is not monitored today (weather data unavailable)."
+
     today_data = days_data[0]
     today_score = score_day(today_data["plants"], sensitivities)
 
@@ -103,29 +111,99 @@ def run(profile_path: str | None = None, dry_run: bool = False, force: bool = Fa
         for d in days_data[1:]
     ]
 
-    notify_threshold = profile.get("thresholds", {}).get("notify_above_score", 30)
-    should_notify = force or today_score.score >= notify_threshold
+    # Detect incomplete fallback coverage: Open-Meteo only covers 6 plant types and
+    # has no US pollen coverage in many areas. If the fallback returned no plant data,
+    # or is missing high-sensitivity plants, warn and always send so the user knows.
+    fallback_warning = None
+    if source == "Open-Meteo":
+        if not today_data["plants"]:
+            # Fallback returned no data at all for this location
+            fallback_warning = (
+                "Google Pollen API unavailable and Open-Meteo has no pollen data for your area. "
+                "Risk score cannot be calculated today."
+            )
+        else:
+            # Fallback has some data but may be missing key plants
+            missing_sensitive = [
+                code for code, level in sensitivities.items()
+                if level >= 3 and code not in today_data["plants"]
+            ]
+            if missing_sensitive:
+                # Only list the top plants by sensitivity, not all 20+
+                high_sensitivity = [c for c in missing_sensitive if sensitivities.get(c, 0) >= 4]
+                listed = high_sensitivity[:6] or missing_sensitive[:4]
+                fallback_warning = (
+                    f"Google Pollen API unavailable. Open-Meteo fallback missing key plants: "
+                    f"{', '.join(sorted(listed))} and others. Actual risk may be higher."
+                )
+        if fallback_warning:
+            print("INFO: Fallback coverage gap — sending report with warning", file=sys.stderr)
 
-    if not should_notify:
+    warning = " ".join(w for w in (fallback_warning, mold_note) if w) or None
+
+    thresholds = profile.get("thresholds", {})
+    notify_threshold = thresholds.get("notify_above_score", 30)
+    cooldown_days = thresholds.get("cooldown_days", 7)
+
+    today_is_high = today_score.score >= notify_threshold
+    forecast_has_high = any(fs.score >= notify_threshold for fs, _ in forecast) if forecast else False
+
+    # A single plant you react strongly to can be enough on its own (e.g. fall ragweed
+    # with nothing else in the air never reaches the summed threshold).
+    plant_threshold = thresholds.get("notify_plant_contribution", 8)
+    hot_plants = _hot_plants(today_score, today_data["date"], forecast, plant_threshold)
+    today_plant_hot = any(d == today_data["date"] for _, d in hot_plants.values())
+    notice = _heads_up(hot_plants, today_data["date"])
+
+    run_state = state_mod.load()
+    days_since = state_mod.days_since_last_high(run_state)
+    in_cooldown = days_since is not None and days_since <= cooldown_days
+
+    # Determine send reason (None = don't send)
+    send_reason = None
+    if force:
+        send_reason = "forced"
+    elif fallback_warning is not None:
+        send_reason = "fallback"
+    elif today_is_high:
+        send_reason = "high"
+    elif today_plant_hot:
+        send_reason = "plant"
+    elif forecast_has_high:
+        send_reason = "forecast"
+    elif hot_plants:
+        send_reason = "plant-forecast"
+    elif in_cooldown:
+        send_reason = f"cooldown ({days_since}d since last high)"
+
+    # Update state when today is high
+    if today_is_high or today_plant_hot:
+        state_mod.save({**run_state, "last_high_date": date.today().isoformat()})
+
+    if send_reason is None:
         print(
-            f"INFO: Score {today_score.score} below notify threshold {notify_threshold} — no alert sent",
+            f"INFO: Score {today_score.score} below threshold {notify_threshold}, "
+            f"no forecast high, cooldown expired ({days_since}d) — no alert sent",
             file=sys.stderr,
         )
-        # Still print to console for logging purposes
-        ConsoleOutput(profile, config).send(today_score, today_data["date"], forecast or None)
+        ConsoleOutput(profile, config).send(today_score, today_data["date"], forecast or None,
+                                            source=source, warning=warning)
         return 0
+
+    print(f"INFO: Sending — reason: {send_reason}", file=sys.stderr)
 
     if dry_run:
         print("DRY RUN — would send to:", profile.get("outputs"))
-        ConsoleOutput(profile, config).send(today_score, today_data["date"], forecast or None)
-        print(f"\nSource: {source}")
+        ConsoleOutput(profile, config).send(today_score, today_data["date"], forecast or None,
+                                            source=source, warning=warning, notice=notice)
         return 0
 
     outputs = build_outputs(profile, config)
     errors = []
     for output in outputs:
         try:
-            output.send(today_score, today_data["date"], forecast or None)
+            output.send(today_score, today_data["date"], forecast or None,
+                        source=source, warning=warning, notice=notice)
         except Exception as e:
             errors.append(f"{type(output).__name__}: {e}")
             print(f"ERROR in {type(output).__name__}: {e}", file=sys.stderr)
@@ -133,6 +211,26 @@ def run(profile_path: str | None = None, dry_run: bool = False, force: bool = Fa
     if errors:
         return 1
     return 0
+
+
+def _hot_plants(today_score, today_date, forecast, threshold: float) -> dict:
+    """{plant code: (display_name, first date)} for plants at or above threshold, today or forecast."""
+    hot = {}
+    for day_score, day_date in [(today_score, today_date)] + list(forecast or []):
+        for p in day_score.plant_scores:
+            if p.contribution >= threshold and p.code not in hot:
+                hot[p.code] = (p.display_name, day_date)
+    return hot
+
+
+def _heads_up(hot_plants: dict, today_date) -> str | None:
+    if not hot_plants:
+        return None
+    parts = [
+        f"{name} ({'today' if d == today_date else d.strftime('%A')})"
+        for name, d in sorted(hot_plants.values(), key=lambda x: x[1])
+    ]
+    return f"Heads-up: {', '.join(parts)} at a level you react to — good time to start antihistamines."
 
 
 def _load_dotenv(path: str = ".env") -> None:
