@@ -7,6 +7,9 @@
     "lon": -80.6506,
     "timezone": "America/New_York"
   },
+  "kryptonite": [
+    "RAGWEED"
+  ],
   "sensitivities": {
     "trees": {
       "JUNIPER": 4,

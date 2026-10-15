@@ -38,6 +38,7 @@ def _build_payload(
             "upi": p.upi,
             "sensitivity": p.sensitivity,
             "contribution": round(p.contribution, 2),
+            "kryptonite": p.kryptonite,
         }
         for p in today.top_threats
         if p.contribution > 0

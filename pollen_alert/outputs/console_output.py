@@ -60,6 +60,7 @@ def format_message(
             lines.append(
                 f"  {cat_emoji} {p.display_name:<12} UPI {p.upi}/5  ×  "
                 f"Your sensitivity {p.sensitivity}  →  {severity}"
+                + ("  ☢️ KRYPTONITE" if p.kryptonite else "")
             )
     else:
         lines.append("")

@@ -28,6 +28,9 @@ PLANT_CATEGORY = {
     "MOLD_SPORES": "mold",
 }
 
+# Plants listed under "kryptonite" in profile.json count this many times over in the score
+KRYPTONITE_MULTIPLIER = 2.0
+
 # Risk bands (score → label, color code)
 RISK_BANDS = [
     (0,  20, "Low",       "green"),
@@ -45,6 +48,7 @@ class PlantScore:
     upi: int           # 0–5
     sensitivity: int   # 0–4
     contribution: float
+    kryptonite: bool = False
 
 
 @dataclass
@@ -59,7 +63,7 @@ class DayScore:
         return sorted(self.plant_scores, key=lambda p: p.contribution, reverse=True)
 
 
-def score_day(plants: dict, sensitivities: dict) -> DayScore:
+def score_day(plants: dict, sensitivities: dict, kryptonite=frozenset()) -> DayScore:
     """Compute a personal risk score for one day of pollen data.
 
     Args:
@@ -82,7 +86,10 @@ def score_day(plants: dict, sensitivities: dict) -> DayScore:
 
         category = PLANT_CATEGORY.get(code, "weeds")
         weight = WEIGHT_FACTORS.get(category, 1.0)
+        is_kryptonite = code in kryptonite
         contribution = upi * sensitivity * weight
+        if is_kryptonite:
+            contribution *= KRYPTONITE_MULTIPLIER
 
         plant_scores.append(PlantScore(
             code=code,
@@ -90,6 +97,7 @@ def score_day(plants: dict, sensitivities: dict) -> DayScore:
             upi=upi,
             sensitivity=sensitivity,
             contribution=round(contribution, 2),
+            kryptonite=is_kryptonite,
         ))
         raw_total += contribution
 

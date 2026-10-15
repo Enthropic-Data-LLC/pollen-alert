@@ -66,6 +66,7 @@ def run(profile_path: str | None = None, dry_run: bool = False, force: bool = Fa
     lat = float(profile["location"]["lat"])
     lon = float(profile["location"]["lon"])
     sensitivities = flatten_sensitivities(profile["sensitivities"])
+    kryptonite = {c.upper() for c in profile.get("kryptonite", [])}
 
     # Fetch forecast — try Google first, fall back to Open-Meteo
     days_data = None
@@ -103,11 +104,11 @@ def run(profile_path: str | None = None, dry_run: bool = False, force: bool = Fa
         mold_note = "Mold is not monitored today (weather data unavailable)."
 
     today_data = days_data[0]
-    today_score = score_day(today_data["plants"], sensitivities)
+    today_score = score_day(today_data["plants"], sensitivities, kryptonite)
 
     # Build forecast list: (DayScore, date) for each day after today
     forecast = [
-        (score_day(d["plants"], sensitivities), d["date"])
+        (score_day(d["plants"], sensitivities, kryptonite), d["date"])
         for d in days_data[1:]
     ]
 
@@ -149,7 +150,8 @@ def run(profile_path: str | None = None, dry_run: bool = False, force: bool = Fa
     forecast_has_high = any(fs.score >= notify_threshold for fs, _ in forecast) if forecast else False
 
     # A single plant you react strongly to can be enough on its own (e.g. fall ragweed
-    # with nothing else in the air never reaches the summed threshold).
+    # with nothing else in the air never reaches the summed threshold). Kryptonite
+    # plants alert at any detectable level.
     plant_threshold = thresholds.get("notify_plant_contribution", 8)
     hot_plants = _hot_plants(today_score, today_data["date"], forecast, plant_threshold)
     today_plant_hot = any(d == today_data["date"] for _, d in hot_plants.values())
@@ -214,11 +216,12 @@ def run(profile_path: str | None = None, dry_run: bool = False, force: bool = Fa
 
 
 def _hot_plants(today_score, today_date, forecast, threshold: float) -> dict:
-    """{plant code: (display_name, first date)} for plants at or above threshold, today or forecast."""
+    """{plant code: (display_name, first date)} for plants at or above threshold, or any
+    detectable kryptonite plant, today or in the forecast."""
     hot = {}
     for day_score, day_date in [(today_score, today_date)] + list(forecast or []):
         for p in day_score.plant_scores:
-            if p.contribution >= threshold and p.code not in hot:
+            if (p.contribution >= threshold or p.kryptonite) and p.code not in hot:
                 hot[p.code] = (p.display_name, day_date)
     return hot
 

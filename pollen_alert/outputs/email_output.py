@@ -85,7 +85,7 @@ def _render_html(profile: dict, today: DayScore, today_date: date, forecast: lis
         icon = _CATEGORY_ICONS.get(cat, "🌿")
         threat_rows += f"""
         <tr>
-          <td style="padding:6px 12px;">{icon} {p.display_name}</td>
+          <td style="padding:6px 12px;">{icon} {p.display_name}{" ☢️ <strong>KRYPTONITE</strong>" if p.kryptonite else ""}</td>
           <td style="padding:6px 12px; text-align:center;">{p.upi}/5</td>
           <td style="padding:6px 12px; text-align:center;">{p.sensitivity}/4</td>
           <td style="padding:6px 12px; text-align:center; color:{band_color}; font-weight:bold;">

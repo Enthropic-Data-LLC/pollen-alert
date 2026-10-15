@@ -65,3 +65,23 @@ def test_mold_estimate_uses_past_days_and_merges():
     mold_estimate.merge_into(days, est)
     assert days[0]["plants"]["MOLD_SPORES"]["upi"] == est[TODAY]
     assert days[1]["plants"]["MOLD_SPORES"]["upi"] == 1  # real reading never overwritten
+
+
+def _kday(**upis):
+    return score_day({c: {"upi": u, "display_name": c.title()} for c, u in upis.items()},
+                     SENS, {"RAGWEED"})
+
+
+def test_kryptonite_alerts_at_any_detectable_level():
+    hot = _hot_plants(_kday(RAGWEED=1), TODAY, [], 8)
+    assert hot == {"RAGWEED": ("Ragweed", TODAY)}
+
+
+def test_kryptonite_counts_double_and_is_flagged():
+    plain, kryp = _day(RAGWEED=3), _kday(RAGWEED=3)
+    assert kryp.score == 2 * plain.score
+    assert kryp.plant_scores[0].kryptonite and not plain.plant_scores[0].kryptonite
+
+
+def test_kryptonite_absent_does_not_alert():
+    assert _hot_plants(_kday(RAGWEED=0, ELM=1), TODAY, [], 8) == {}
