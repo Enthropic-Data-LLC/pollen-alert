@@ -35,3 +35,7 @@ Thumbs.db
 
 # Logs / output
 *.log
+
+# Runtime state and backups (personal data, public repo)
+config/state.json
+config/*.bak*
