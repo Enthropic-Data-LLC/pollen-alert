@@ -1,4 +1,5 @@
 """Telegram output — sends formatted alert via Bot API."""
+import os
 
 import json
 import urllib.request
@@ -9,7 +10,7 @@ from pollen_alert.outputs.base import BaseOutput
 from pollen_alert.outputs.console_output import format_message
 from pollen_alert.scorer import DayScore
 
-TELEGRAM_API = "https://api.telegram.org/bot{token}/sendMessage"
+TELEGRAM_API = os.environ.get("TELEGRAM_API_BASE", "https://tg-relay.lan:8766") + "/bot{token}/sendMessage"
 
 
 class TelegramOutput(BaseOutput):
